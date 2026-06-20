@@ -13,6 +13,7 @@ export default function DailyViewPage() {
   const [members, setMembers] = useState([]);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   useEffect(() => {
     async function load() {
@@ -160,6 +161,19 @@ export default function DailyViewPage() {
                     dangerouslySetInnerHTML={{ __html: renderTextWithMentions(report.description || 'N/A', projects) }} />
                 </div>
 
+                {report.images && report.images.length > 0 && (
+                  <div className="field-row" style={{ background: 'transparent' }}>
+                    <div className="field-label">Attachments</div>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
+                      {report.images.map((img, idx) => (
+                        <div key={idx} style={{ width: 80, height: 80, borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-subtle)', cursor: 'zoom-in' }} onClick={() => setSelectedImage(img)}>
+                          <img src={img} alt="Attachment" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {report.projects && report.projects.length > 0 && (
                   <div className="tags-row">
                     {report.projects.map(pid => {
@@ -176,6 +190,15 @@ export default function DailyViewPage() {
               </div>
             );
           })}
+        </div>
+      )}
+      {/* Image Zoom Modal */}
+      {selectedImage && (
+        <div className="modal-overlay open" onClick={() => setSelectedImage(null)}>
+          <div className="modal-box" style={{ maxWidth: '90vw', maxHeight: '90vh', background: 'transparent', border: 'none', boxShadow: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center' }} onClick={e => e.stopPropagation()}>
+            <img src={selectedImage} alt="Zoomed Attachment" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '8px' }} />
+            <button className="btn btn-icon" onClick={() => setSelectedImage(null)} style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(0,0,0,0.5)', color: 'white' }}>✕</button>
+          </div>
         </div>
       )}
     </div>

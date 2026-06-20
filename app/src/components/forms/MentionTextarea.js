@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 
-export default function MentionTextarea({ value, onChange, projects = [], placeholder, rows = 3, id }) {
+export default function MentionTextarea({ value, onChange, projects = [], placeholder, rows = 3, id, onImagePaste }) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [filter, setFilter] = useState('');
   const [highlightedIdx, setHighlightedIdx] = useState(0);
@@ -99,6 +99,24 @@ export default function MentionTextarea({ value, onChange, projects = [], placeh
     return () => document.removeEventListener('click', handleClick);
   }, [showDropdown]);
 
+  const handlePaste = (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        e.preventDefault(); // Prevent default text paste if it's an image
+        const blob = items[i].getAsFile();
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          if (onImagePaste) onImagePaste(event.target.result);
+        };
+        reader.readAsDataURL(blob);
+        return;
+      }
+    }
+  };
+
   return (
     <div className="mention-wrapper">
       <textarea
@@ -107,6 +125,7 @@ export default function MentionTextarea({ value, onChange, projects = [], placeh
         value={value}
         onChange={handleInput}
         onKeyDown={handleKeyDown}
+        onPaste={handlePaste}
         placeholder={placeholder}
         rows={rows}
         id={id}

@@ -22,6 +22,7 @@ function EntryForm() {
   const [currentWork, setCurrentWork] = useState('');
   const [description, setDescription] = useState('');
   const [selectedProjects, setSelectedProjects] = useState([]);
+  const [images, setImages] = useState([]);
   const [status, setStatus] = useState('');
   const [carryoverHint, setCarryoverHint] = useState(null);
   const [todayReports, setTodayReports] = useState([]);
@@ -68,6 +69,7 @@ function EntryForm() {
       setCurrentWork(report.currentWork || '');
       setDescription(report.description || '');
       setSelectedProjects(report.projects || []);
+      setImages(report.images || []);
       setStatus('📄 Editing existing entry');
     } else {
       clearFields();
@@ -96,6 +98,7 @@ function EntryForm() {
     setCurrentWork('');
     setDescription('');
     setSelectedProjects([]);
+    setImages([]);
     setCarryoverHint(null);
     setStatus('');
   }
@@ -118,7 +121,8 @@ function EntryForm() {
       solution: solution.trim(),
       currentWork: currentWork.trim(),
       description: description.trim(),
-      projects: selectedProjects
+      projects: selectedProjects,
+      images: images
     });
 
     const member = await MembersDB.getById(memberId);
@@ -132,6 +136,15 @@ function EntryForm() {
       e.preventDefault();
       handleSave();
     }
+  }
+
+  function handleImagePaste(base64) {
+    setImages(prev => [...prev, base64]);
+    toast('Image attached', 'success');
+  }
+
+  function removeImage(index) {
+    setImages(prev => prev.filter((_, i) => i !== index));
   }
 
   const memberMap = {};
@@ -180,44 +193,63 @@ function EntryForm() {
 
         <div className="form-group">
           <label className="form-label">Yesterday&apos;s Work Completed</label>
-          <MentionTextarea value={yesterdayWork} onChange={setYesterdayWork} projects={projects} placeholder="What did you complete yesterday? Use @ to tag projects" rows={2} />
+          <MentionTextarea value={yesterdayWork} onChange={setYesterdayWork} onImagePaste={handleImagePaste} projects={projects} placeholder="What did you complete yesterday? Use @ to tag projects. You can paste images." rows={2} />
         </div>
 
         <div className="form-row">
           <div className="form-group">
             <label className="form-label">Issue Faced</label>
-            <MentionTextarea value={issueFaced} onChange={setIssueFaced} projects={projects} placeholder="Any blockers or issues? Use @ to tag projects" rows={2} />
+            <MentionTextarea value={issueFaced} onChange={setIssueFaced} onImagePaste={handleImagePaste} projects={projects} placeholder="Any blockers or issues? Use @ to tag projects. You can paste images." rows={2} />
           </div>
           <div className="form-group">
             <label className="form-label">Solution</label>
-            <MentionTextarea value={solution} onChange={setSolution} projects={projects} placeholder="How was it resolved?" rows={2} />
+            <MentionTextarea value={solution} onChange={setSolution} onImagePaste={handleImagePaste} projects={projects} placeholder="How was it resolved?" rows={2} />
           </div>
         </div>
 
         <div className="form-group">
           <label className="form-label">Current / Today&apos;s Work</label>
-          <MentionTextarea value={currentWork} onChange={setCurrentWork} projects={projects} placeholder="What are you working on today? Use @ to tag projects" rows={2} />
+          <MentionTextarea value={currentWork} onChange={setCurrentWork} onImagePaste={handleImagePaste} projects={projects} placeholder="What are you working on today? Use @ to tag projects. You can paste images." rows={2} />
         </div>
 
         <div className="form-group">
           <label className="form-label">Description / Notes</label>
-          <MentionTextarea value={description} onChange={setDescription} projects={projects} placeholder="Any additional notes..." rows={2} />
+          <MentionTextarea value={description} onChange={setDescription} onImagePaste={handleImagePaste} projects={projects} placeholder="Any additional notes..." rows={2} />
         </div>
 
-        <div className="form-group">
-          <label className="form-label">Project Tags</label>
-          <div className="tag-selector">
-            {projects.map(p => (
-              <span
-                key={p.id}
-                className={`tag-option ${selectedProjects.includes(p.id) ? 'selected' : ''}`}
-                style={selectedProjects.includes(p.id) ? { borderColor: p.color + '40', background: p.color + '15', color: p.color } : {}}
-                onClick={() => toggleProject(p.id)}
-              >
-                {p.name}
-              </span>
-            ))}
+        <div className="form-row">
+          <div className="form-group">
+            <label className="form-label">Project Tags</label>
+            <div className="tag-selector">
+              {projects.map(p => (
+                <span
+                  key={p.id}
+                  className={`tag-option ${selectedProjects.includes(p.id) ? 'selected' : ''}`}
+                  style={selectedProjects.includes(p.id) ? { borderColor: p.color + '40', background: p.color + '15', color: p.color } : {}}
+                  onClick={() => toggleProject(p.id)}
+                >
+                  {p.name}
+                </span>
+              ))}
+            </div>
           </div>
+          
+          {images.length > 0 && (
+            <div className="form-group">
+              <label className="form-label">Attachments ({images.length})</label>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {images.map((img, idx) => (
+                  <div key={idx} style={{ position: 'relative', width: 60, height: 60, borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
+                    <img src={img} alt="Attachment" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <button 
+                      onClick={() => removeImage(idx)}
+                      style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >✕</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'var(--sp-lg)' }}>

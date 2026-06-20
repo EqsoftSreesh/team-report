@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { MembersDB, ReportsDB, ProjectsDB, TeamsDB } from '@/lib/db';
-import { todayStr, formatDate, getInitials, renderTextWithMentions } from '@/lib/utils';
+import { todayStr, formatDate, getInitials, renderTextWithMentions, shiftDate } from '@/lib/utils';
+import ProjectVelocity from '@/components/charts/ProjectVelocity';
+import ActivityTimeline from '@/components/charts/ActivityTimeline';
 
 export default function DashboardPage() {
   const [members, setMembers] = useState([]);
@@ -12,6 +14,7 @@ export default function DashboardPage() {
   const [teams, setTeams] = useState([]);
   const [issues, setIssues] = useState([]);
   const [recentReports, setRecentReports] = useState([]);
+  const [chartData, setChartData] = useState({ timeline: [], velocity: [] });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,6 +36,34 @@ export default function DashboardPage() {
         setIssues(i.filter(x => !resolved.includes(x.keyword)));
         // Recent 10 reports
         setRecentReports(all.sort((a, b) => b.date.localeCompare(a.date) || b.updatedAt?.localeCompare(a.updatedAt || '')).slice(0, 8));
+
+        // Generate Chart Data
+        const last14Days = Array.from({ length: 14 }, (_, i) => shiftDate(todayStr(), -13 + i));
+        const timeline = last14Days.map(d => {
+          const dayReports = all.filter(x => x.date === d);
+          return {
+            date: d,
+            submitted: dayReports.length,
+            issues: dayReports.filter(x => x.issueFaced && x.issueFaced.trim() !== '').length
+          };
+        });
+
+        const projectCounts = {};
+        all.forEach(r => {
+          r.projects?.forEach(pid => {
+            projectCounts[pid] = (projectCounts[pid] || 0) + 1;
+          });
+        });
+        const velocity = p
+          .filter(proj => projectCounts[proj.id])
+          .map(proj => ({
+            name: proj.name,
+            value: projectCounts[proj.id],
+            fill: proj.color
+          }))
+          .sort((a, b) => b.value - a.value);
+
+        setChartData({ timeline, velocity });
       } catch (e) { console.error(e); }
       setLoading(false);
     }
@@ -122,6 +153,12 @@ export default function DashboardPage() {
             ))
           )}
           {issues.length > 4 && <Link href="/issues" className="btn btn-ghost" style={{ marginTop: 'var(--sp-sm)', fontSize: '0.78rem' }}>View all →</Link>}
+        </div>
+
+        {/* Analytics Charts */}
+        <div style={{ gridColumn: '1 / -1', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--sp-md)' }}>
+          <ActivityTimeline data={chartData.timeline} />
+          <ProjectVelocity data={chartData.velocity} />
         </div>
 
         {/* Recent Activity */}
