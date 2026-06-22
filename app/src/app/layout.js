@@ -1,7 +1,7 @@
 import './globals.css';
 import Sidebar from '@/components/layout/Sidebar';
 import { ToastProvider } from '@/context/ToastContext';
-import DBInitializer from '@/components/layout/DBInitializer';
+import Providers from '@/components/providers';
 
 export const metadata = {
   title: 'Team Standup Tracker',
@@ -12,15 +12,16 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <ToastProvider>
-          <DBInitializer />
-          <div className="app-shell">
-            <Sidebar />
-            <main className="main-content">
-              {children}
-            </main>
-          </div>
-        </ToastProvider>
+        <Providers>
+          <ToastProvider>
+            <div className="app-shell">
+              <Sidebar />
+              <main className="main-content">
+                {children}
+              </main>
+            </div>
+          </ToastProvider>
+        </Providers>
       </body>
     </html>
   );

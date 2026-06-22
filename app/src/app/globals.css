@@ -169,6 +169,13 @@ body::after {
     margin-left: 0;
     padding: var(--sp-md);
   }
+  .mobile-hamburger {
+    display: flex !important;
+  }
+}
+
+.mobile-hamburger {
+  display: none !important;
 }
 
 /* ─────────── Sidebar ─────────── */

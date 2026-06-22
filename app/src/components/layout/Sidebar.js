@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { useSession, signOut } from 'next-auth/react';
 import { ReportsDB } from '@/lib/db';
 
 const navItems = [
@@ -23,8 +24,10 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
   const [issueBadge, setIssueBadge] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
+
 
   useEffect(() => {
     async function loadBadge() {
@@ -39,16 +42,16 @@ export default function Sidebar() {
     loadBadge();
   }, [pathname]);
 
+  if (pathname === '/login') {
+    return null;
+  }
+
   return (
     <>
       {/* Mobile hamburger */}
       <button
-        className="btn btn-ghost btn-icon"
-        style={{
-          position: 'fixed', top: 12, left: 12, zIndex: 200,
-          display: 'none',
-          '@media (max-width: 900px)': { display: 'flex' }
-        }}
+        className="btn btn-ghost btn-icon mobile-hamburger"
+        style={{ position: 'fixed', top: 12, left: 12, zIndex: 200 }}
         onClick={() => setMobileOpen(!mobileOpen)}
       >
         ☰
@@ -56,17 +59,24 @@ export default function Sidebar() {
 
       <aside className={`sidebar ${mobileOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
-          <div className="sidebar-logo">
+          <Link href="/" className="sidebar-logo" style={{ textDecoration: 'none' }}>
             <div className="sidebar-logo-icon">📋</div>
             <div>
               <h1>StandupTracker</h1>
               <span>Team Reports</span>
             </div>
-          </div>
+          </Link>
         </div>
 
         <nav className="sidebar-nav">
           {navItems.map((item, idx) => {
+            if (item.section === 'MANAGE' && session?.user?.role !== 'ADMIN') {
+              return null;
+            }
+            if ((item.href === '/projects' || item.href === '/members' || item.href === '/export') && session?.user?.role !== 'ADMIN') {
+              return null;
+            }
+
             if (item.section) {
               return <div key={idx} className="sidebar-section-label">{item.section}</div>;
             }
@@ -90,6 +100,27 @@ export default function Sidebar() {
             );
           })}
         </nav>
+
+        {session ? (
+          <div style={{ padding: 'var(--sp-md)' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px', paddingLeft: '4px' }}>
+              Logged in as <strong>{session.user.name}</strong>
+            </div>
+            <button
+              className="btn btn-ghost"
+              style={{ width: '100%', justifyContent: 'flex-start', color: 'var(--danger)' }}
+              onClick={() => signOut({ callbackUrl: '/login' })}
+            >
+              <span className="nav-icon">🚪</span> Sign Out
+            </button>
+          </div>
+        ) : (
+          <div style={{ padding: 'var(--sp-md)' }}>
+            <Link href="/login" className="btn btn-lime" style={{ width: '100%', justifyContent: 'center' }}>
+              Sign In
+            </Link>
+          </div>
+        )}
       </aside>
     </>
   );

@@ -36,17 +36,17 @@ export default function ActivityTimeline({ data }) {
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
-          <XAxis 
-            dataKey="date" 
-            axisLine={false} 
-            tickLine={false} 
-            tick={{ fill: 'var(--text-muted)', fontSize: '0.7rem' }} 
+          <XAxis
+            dataKey="date"
+            axisLine={false}
+            tickLine={false}
+            tick={{ fill: 'var(--text-muted)', fontSize: '0.7rem' }}
             tickFormatter={(val) => val.split('-').slice(1).join('/')}
           />
-          <YAxis 
-            axisLine={false} 
-            tickLine={false} 
-            tick={{ fill: 'var(--text-muted)', fontSize: '0.7rem' }} 
+          <YAxis
+            axisLine={false}
+            tickLine={false}
+            tick={{ fill: 'var(--text-muted)', fontSize: '0.7rem' }}
             allowDecimals={false}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--glass-bg-hover)' }} />

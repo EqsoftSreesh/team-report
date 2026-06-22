@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
+import { useSession } from 'next-auth/react';
 import { MembersDB, ReportsDB, ProjectsDB, TeamsDB } from '@/lib/db';
 import { todayStr, getInitials, escapeHtml } from '@/lib/utils';
 import { useToast } from '@/context/ToastContext';
@@ -11,6 +12,7 @@ import MentionTextarea from '@/components/forms/MentionTextarea';
 function EntryForm() {
   const toast = useToast();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
 
   const [members, setMembers] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -35,12 +37,16 @@ function EntryForm() {
       const enrichedProjects = p.map(proj => ({ ...proj, teamName: teamMap[proj.teamId] || '' }));
       setMembers(m);
       setProjects(enrichedProjects);
-      // Pre-select from URL query
+      // Pre-select from URL query or current session
       const memberParam = searchParams.get('member');
-      if (memberParam) setSelectedMember(memberParam);
+      if (memberParam) {
+        setSelectedMember(memberParam);
+      } else if (session?.user?.id) {
+        setSelectedMember(session.user.id);
+      }
     }
     load();
-  }, [searchParams]);
+  }, [searchParams, session]);
 
   useEffect(() => {
     loadTodayReports();
@@ -163,7 +169,12 @@ function EntryForm() {
         <div className="form-row">
           <div className="form-group">
             <label className="form-label">Team Member</label>
-            <select className="form-select" value={selectedMember} onChange={e => setSelectedMember(e.target.value)}>
+            <select 
+              className="form-select" 
+              value={selectedMember} 
+              onChange={e => setSelectedMember(e.target.value)}
+              disabled={session?.user?.role !== 'ADMIN'}
+            >
               <option value="">Select a member...</option>
               {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
